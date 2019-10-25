@@ -1,0 +1,7 @@
+Name:
+    spell checker
+Run:
+    1. make
+    2. ./server
+    3. ./client
+Description:
