@@ -64,7 +64,7 @@ int deQueue_log(queue_log* log_queue, int *socket){
     }else{
         int *arr = log_queue->queue;
         *socket = arr[0];
-        queueAdjust(arr, log_queue->size);
+        queueAdjust(arr, &log_queue->size);
         return 1;
     }
 }
@@ -76,7 +76,7 @@ int deQueue_job(queue_job* job_queue, int *socket){
     }else{
         int *arr = job_queue->queue;
         *socket = arr[0];
-        queueAdjust(arr, job_queue->size);
+        queueAdjust(arr, &job_queue->size);
         return 1;
     }
 }
@@ -86,8 +86,39 @@ void printQueue(int *arr, int size){
     }
     puts("");
 }
+
+/*
 int main(int argc, char const *argv[])
 {
-    
+    queue_job job_queue;
+    init_queue_job(&job_queue);
+    int num = 0;
+    while(num != -1){
+        printf("Interger read> ");
+        scanf("%d", &num);
+        if(num == -1){
+            break;
+        }
+        int *arr = job_queue.queue;
+        // printf("%d\n", num);
+        if(num == 1){
+            printf("enqueue> ");
+            scanf("%d", &num);
+            if(num == -1){
+                break;
+            }
+            enQueue_job(&job_queue, num);
+            printQueue(arr, job_queue.size);
+        }
+        if(num == 2){
+            printf("dequeue> ");
+            deQueue_job(&job_queue, &num);
+            puts("");
+            printf("dequeued: %d\n", num);
+            int *arr = job_queue.queue;
+            printQueue(arr, job_queue.size);
+        }
+    }
     return 0;
 }
+*/
