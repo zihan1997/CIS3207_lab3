@@ -44,3 +44,50 @@ int enQueue_job(queue_job* job_queue, int socket){
     job_queue->size += 1;
     return 1;
 }
+
+void queueAdjust(int *arr, int *size)
+{
+    for (int i = 0; i < *size - 1; i++)
+    {
+        arr[i] = arr[i + 1];
+    }
+    // make the last one zero
+    arr[*size - 1] = 0;
+    // current size - 1
+    *size -= 1;
+}
+
+int deQueue_log(queue_log* log_queue, int *socket){
+    // check if the queue if empty
+    if(log_queue->size == 0){
+        return 0;
+    }else{
+        int *arr = log_queue->queue;
+        *socket = arr[0];
+        queueAdjust(arr, log_queue->size);
+        return 1;
+    }
+}
+
+int deQueue_job(queue_job* job_queue, int *socket){
+    // check if the queue if empty
+    if(job_queue->size == 0){
+        return 0;
+    }else{
+        int *arr = job_queue->queue;
+        *socket = arr[0];
+        queueAdjust(arr, job_queue->size);
+        return 1;
+    }
+}
+void printQueue(int *arr, int size){
+    for(int i = 0; i < size; i++){
+        printf("%d ", arr[i]);
+    }
+    puts("");
+}
+int main(int argc, char const *argv[])
+{
+    
+    return 0;
+}
