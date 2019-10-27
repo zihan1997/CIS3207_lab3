@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 
 #include "Queue.c"
+#include "open_listenfd.c"
 
 // Constants
 // port between 1024 to 65535
@@ -77,6 +78,7 @@ int main(int argc, char const *argv[])
     // initialize mutext and cond
     pthread_cond_init(&empty, 0);
     pthread_cond_init(&fill, 0);
+    pthread_mutex_init(&mutex, 0);
 
     // ids array is to assign id to each thread
     int ids[MAX_WORKER];
@@ -92,6 +94,40 @@ int main(int argc, char const *argv[])
     }
     puts("All Done");
     
+    // Initial Queues
+    queue_job job_queue;
+    queue_log log_queue;
+    init_queue_job(&job_queue);
+    init_queue_log(&log_queue);
 
+    // Socket implement
+    struct sockaddr_in client;
+    int clientLen = sizeof(client);
+    int connectionSocket, clientSocket, bytesReturned;
+    char recvBuffer[1024] = "\0";
+
+    if(port < 1024 || port > 65535){
+        printf("port needs to be between 1024 and 65535\n");
+        printf("Due to the error, port is set to default one: %d", 
+                                                        DEFAULT_PORT);
+    }
+    connectionSocket = open_listenfd(port);
+    if(connectionSocket == -1){
+        printf("Error occured connecting to %d\n", port);
+        return -1;
+    }
+    while (1)
+    {
+        clientSocket = accept(connectionSocket, 0, 0);
+        // if connection failed, go to next loop to wait
+        if(clientSocket == -1){
+            printf("connection failed\n");
+            continue;
+        }
+        pthread_mutex_lock(&mutex);
+        enQueue_job(&job_queue, clientSocket);
+        pthread_cond_signal(&fill);
+        pthread_mutex_unlock(&mutex);
+    }
     return 0;
 }
