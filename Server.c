@@ -18,21 +18,75 @@
 #define DEFAULT_PORT 10086
 #define DEFAULT_DICTIONARY "words.txt"
 #define MAX_WORKER 20
+#define BUFFER_SIZE 1024
 
 FILE *logFile;
 FILE *dict;
 
+queue_job job_queue;
+queue_log log_queue;
+
+// empty: jsut dequeued, ready to enqueue more
+// fill: new connect comes in
 pthread_cond_t empty, fill;
-pthread_mutex_t mutex;
+pthread_mutex_t mutex, mutex_log;
 
 // get job queue, check words and send to log queue
-void* procesessThread(void* id){
-    printf("Thread>%d\n", *(int *)id);
+void* worker_thread(void* id){
+    // printf("Thread>%d\n", *(int *)id);
     // fprintf(logFile,"Thread>%d\n", *(int *)id);
     
+    int client = 0;
+    //Get the socket discriptor
+    pthread_mutex_lock(&mutex);
+    while(job_queue.size == 0){
+        pthread_cond_wait(&fill, &mutex);
+    }
+    deQueue_job(&job_queue, &client);
+    pthread_cond_signal(&empty);
+    pthread_mutex_unlock(&mutex);
+
+    printf("Thread>%d\n", *(int *)id);
+
+    char buffer[BUFFER_SIZE] = "\0";
+    // Start to receive data
+    while( recv(client, buffer, sizeof(buffer), 0) > 0){
+        if(buffer[0] == 27){
+            break;
+        }
+        struct log result = {"\0", "\0"};
+        strcpy(result.word, buffer);
+
+        // Check the word
+        fflush(dict);
+        char word[100];
+        while(fscanf(dict, "%s", word) != EOF){
+            // Match the word
+            printf("Word: %s, Buffer: %s\n", word, buffer);
+            if(strcmp(word, buffer) == 0){
+                // Enqueue the result of a word
+                pthread_mutex_lock(&mutex_log);
+                while(log_queue.size == MAX){
+                    pthread_cond_wait(&empty, &mutex_log);
+                }
+                strcpy(result.status, "OK\n");
+                printf("\nCorrect\n");
+                enQueue_log(&log_queue, &result);
+                pthread_mutex_unlock(&mutex_log);
+                break;
+            }else{
+                strcpy(result.status, "MISSPELLED\n");
+            }
+        }
+        printf("The word: %s > %s\n", result.word, result.status);
+        // Send result to client
+        send(client, result.status, sizeof(result.status), 0);
+    }
 
     return 0;
 }
+
+
 int main(int argc, char const *argv[])
 {
     //* Open files
@@ -88,17 +142,16 @@ int main(int argc, char const *argv[])
     for(int i = 0; i < MAX_WORKER; i++){
         ids[i] = i;
         // printf("id: %d\n", ids[i]);
-        pthread_create(&(threads[i]), NULL, &procesessThread, &(ids[i]));
+        pthread_create(&(threads[i]), NULL, &worker_thread, &(ids[i]));
     }
 
-    for(int i = 0; i < MAX_WORKER; i++){
-        pthread_join(threads[i], NULL);
-    }
-    puts("All Done");
-    
+    // for(int i = 0; i < MAX_WORKER; i++){
+    //     pthread_join(threads[i], NULL);
+    // }
+    // puts("All Done");
+
+
     // Initial Queues
-    queue_job job_queue;
-    queue_log log_queue;
     init_queue_job(&job_queue);
     init_queue_log(&log_queue);
 
@@ -132,6 +185,9 @@ int main(int argc, char const *argv[])
         // send(clientSocket, result, sizeof(result), 0);
         pthread_mutex_lock(&mutex);
         enQueue_job(&job_queue, clientSocket);
+        while(job_queue.size == MAX){
+            pthread_cond_wait(&empty, &mutex);
+        }
         pthread_cond_signal(&fill);
         pthread_mutex_unlock(&mutex);
     }
