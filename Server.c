@@ -15,7 +15,7 @@
 
 // Constants
 // port between 1024 to 65535
-#define DEFAULT_PORT 12313
+#define DEFAULT_PORT 10086
 #define DEFAULT_DICTIONARY "words.txt"
 #define MAX_WORKER 20
 
@@ -29,6 +29,7 @@ pthread_mutex_t mutex;
 void* procesessThread(void* id){
     printf("Thread>%d\n", *(int *)id);
     // fprintf(logFile,"Thread>%d\n", *(int *)id);
+    
 
     return 0;
 }
@@ -104,7 +105,7 @@ int main(int argc, char const *argv[])
     // Socket implement
     struct sockaddr_in client;
     int clientLen = sizeof(client);
-    int connectionSocket, clientSocket, bytesReturned;
+    int connectionSocket, clientSocket;
     char recvBuffer[1024] = "\0";
 
     if(port < 1024 || port > 65535){
@@ -117,33 +118,22 @@ int main(int argc, char const *argv[])
         printf("Error occured connecting to %d\n", port);
         return -1;
     }
-    clientSocket = accept(connectionSocket, 0, 0);
     while (1)
     {
         // if connection failed, go to next loop to wait
+        clientSocket = accept(connectionSocket, 0, 0);
         if(clientSocket == -1){
             printf("connection failed\n");
             continue;
         }
-        char *msg = ">>> ";
-        send(clientSocket, msg, strlen(msg), 0);
-        bytesReturned = recv(clientSocket, recvBuffer, 1024, 0);
-        if(recvBuffer[0] == 27){
-            char *exitMsg = "Done\n";
-			send(clientSocket, exitMsg, strlen(exitMsg), 0);
-			close(clientSocket);
-			break;
-		}else{
-            char *results = "received\n";
-            recvBuffer[strlen(recvBuffer) ] = '\0';
-            printf("The buffer: %s ", recvBuffer);
-            send(clientSocket, recvBuffer, strlen(recvBuffer), 0);
-            send(clientSocket, results, strlen(results), 0);
-        }
-        // pthread_mutex_lock(&mutex);
-        // enQueue_job(&job_queue, clientSocket);
-        // pthread_cond_signal(&fill);
-        // pthread_mutex_unlock(&mutex);
+        // recv(clientSocket, recvBuffer, sizeof(recvBuffer), 0);
+        // printf("The words: %s\n", recvBuffer);
+        // char result[20] = "OK";
+        // send(clientSocket, result, sizeof(result), 0);
+        pthread_mutex_lock(&mutex);
+        enQueue_job(&job_queue, clientSocket);
+        pthread_cond_signal(&fill);
+        pthread_mutex_unlock(&mutex);
     }
     return 0;
 }
