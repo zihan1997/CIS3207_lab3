@@ -24,13 +24,13 @@ void init_queue_job(queue_job* job_queue){
     job_queue->size = 0;
 }
 
-int enQueue_log(queue_log* log_queue, int socket){
+int enQueue_log(queue_log* log_queue, struct log* logs){
     // queue is full
     if(log_queue->size == (MAX-1)){
         return 0;
     }
     int *arr = log_queue->queue;
-    arr[log_queue->size] = socket;
+    arr[log_queue->size] = logs;
     log_queue->size += 1;
     return 1;
 }
