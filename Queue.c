@@ -29,8 +29,9 @@ int enQueue_log(queue_log* log_queue, struct log* result){
     if(log_queue->size == (MAX-1)){
         return 0;
     }
-    int *arr = log_queue->queue;
-    arr[log_queue->size] = result;
+    // int *arr = log_queue->queue;
+    // arr[log_queue->size] = result;
+    log_queue->queue[log_queue->size] = *result;
     log_queue->size += 1;
     return 1;
 }
@@ -39,8 +40,9 @@ int enQueue_job(queue_job* job_queue, int socket){
     if(job_queue->size == (MAX-1)){
         return 0;
     }
-    int *arr = job_queue->queue;
-    arr[job_queue->size] = socket;
+    // int *arr = job_queue->queue;
+    // arr[job_queue->size] = socket;
+    (job_queue->queue)[job_queue->size] = socket;
     job_queue->size += 1;
     return 1;
 }
