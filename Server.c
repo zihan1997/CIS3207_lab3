@@ -89,9 +89,14 @@ void* worker_thread(void* id){
 
 int main(int argc, char const *argv[])
 {
+
+    // Initial Queues
+    init_queue_job(&job_queue);
+    init_queue_log(&log_queue);
+    
     //* Open files
     logFile = fopen("log.txt", "w");
-    if(!logFile){
+    if(logFile == NULL){
         printf("lologFileg failed to open\n");
         // when failed to open, ouput to screen
         logFile = stdout;
@@ -151,9 +156,6 @@ int main(int argc, char const *argv[])
     // puts("All Done");
 
 
-    // Initial Queues
-    init_queue_job(&job_queue);
-    init_queue_log(&log_queue);
 
     // Socket implement
     struct sockaddr_in client;
