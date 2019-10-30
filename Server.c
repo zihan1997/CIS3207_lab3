@@ -65,14 +65,14 @@ void* worker_thread(void* id){
             printf("failed to read file\n");
             exit(EXIT_FAILURE);
         }
-        printf("Start to find match\n");
+            // printf("Start to find match\n");
         // Check the word
         fflush(dict);
         char word[100];
         while(fscanf(dict, "%s", word) != EOF){
             // Match the word
-            puts(">>>>>");
-            printf("Word: %s, Buffer: %s\n", word, buffer);
+                // puts(">>>>>");
+                // printf("Word: %s, Buffer: %s\n", word, buffer);
             if(strcmp(word, buffer) == 0){
                 // Enqueue the result of a word
                 pthread_mutex_lock(&mutex_log);
@@ -80,8 +80,7 @@ void* worker_thread(void* id){
                     pthread_cond_wait(&empty, &mutex_log);
                 }
                 strcpy(result.status, "OK\n");
-                printf("\nCorrect\n");
-                enQueue_log(&log_queue, &result);
+                enQueue_log(&log_queue, result);
                 pthread_mutex_unlock(&mutex_log);
                 break;
             }else{
@@ -91,12 +90,49 @@ void* worker_thread(void* id){
         fclose(dict);
         printf("The word: %s > %s\n", result.word, result.status);
         // Send result to client
-        send(client, result.status, sizeof(result.status), 0);
+        char data[20];
+        strcpy(data, result.word);
+        strcat(data, " ");
+        strcat(data, result.status);
+        send(client, data, sizeof(data), 0);
+
+        // Producer of log
+        pthread_mutex_lock(&mutex_log);
+        while (log_queue.size == MAX){
+            pthread_cond_wait(&empty, &mutex_log);
+        }
+        enQueue_log(&log_queue, result);
+        pthread_cond_signal(&fill);
+        pthread_mutex_unlock(&mutex_log);
+    
     }
 
     return 0;
 }
 
+void* log_thread(void* id){
+    // open log file
+    // if((logFile = fopen("log.txt", "a+")) == NULL){
+    //     printf("cannot read log file\n");
+    //     exit(EXIT_FAILURE);
+    // }
+
+    struct log result;
+    // Consumer
+    // Get the result
+    pthread_mutex_lock(&mutex_log);
+        printf("log id: %d\n", *(int *)id);
+        while (log_queue.size == 0){
+            pthread_cond_wait(&fill, &mutex_log);
+        }
+        deQueue_log(&log_queue, result);
+        pthread_cond_signal(&empty);
+        printf("Word: %s, Result: %s\n", result.word, result.status);
+        // fprintf(logFile, "%s>%s\n", result.word, result.status);
+        // fclose(logFile);
+    pthread_mutex_unlock(&mutex_log);
+    return 0;
+}
 
 int main(int argc, char const *argv[])
 {
@@ -106,8 +142,7 @@ int main(int argc, char const *argv[])
     init_queue_log(&log_queue);
 
     //* Open files
-    logFile = fopen("log.txt", "w");
-    if(logFile == NULL){
+    if((logFile = fopen("log.txt", "w"))== NULL){
         printf("logFile failed to open\n");
         // when failed to open, ouput to screen
         logFile = stdout;
@@ -141,14 +176,8 @@ int main(int argc, char const *argv[])
         ;// go default
     }
     // printf("Port: %d\nDict: %s\n", port, dictionary);
-    //* Read dict
-    // dict = fopen(dictionary, "r");
-    // if(!dict){
-    //     printf("log failed to open\n");
-    //     // if not readable, open default one
-    //     dict = fopen(DEFAULT_DICTIONARY, "r");
-    // }
     fprintf(logFile, "Dict file %s read.\n", dictionary);
+    fclose(logFile);
 
     //* Create threads
 
@@ -165,7 +194,9 @@ int main(int argc, char const *argv[])
         // printf("id: %d\n", ids[i]);
         pthread_create(&(threads[i]), NULL, &worker_thread, &(ids[i]));
     }
-
+    pthread_t logger;
+    int logger_no = 20;
+    pthread_create(&logger, NULL, &log_thread, &logger_no);
     // for(int i = 0; i < MAX_WORKER; i++){
     //     pthread_join(threads[i], NULL);
     // }
