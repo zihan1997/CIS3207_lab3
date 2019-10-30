@@ -74,21 +74,14 @@ void* worker_thread(void* id){
                 // puts(">>>>>");
                 // printf("Word: %s, Buffer: %s\n", word, buffer);
             if(strcmp(word, buffer) == 0){
-                // Enqueue the result of a word
-                pthread_mutex_lock(&mutex_log);
-                while(log_queue.size == MAX){
-                    pthread_cond_wait(&empty, &mutex_log);
-                }
-                strcpy(result.status, "OK\n");
-                enQueue_log(&log_queue, result);
-                pthread_mutex_unlock(&mutex_log);
+                strcpy(result.status, "OK");
                 break;
             }else{
-                strcpy(result.status, "MISSPELLED\n");
+                strcpy(result.status, "MISSPELLED");
             }
         }
         fclose(dict);
-        printf("The word: %s > %s\n", result.word, result.status);
+        printf("worker%d:The word: %s > %s\n", *(int *)id, result.word, result.status);
         // Send result to client
         char data[20];
         strcpy(data, result.word);
@@ -111,26 +104,29 @@ void* worker_thread(void* id){
 }
 
 void* log_thread(void* id){
-    // open log file
-    // if((logFile = fopen("log.txt", "a+")) == NULL){
-    //     printf("cannot read log file\n");
-    //     exit(EXIT_FAILURE);
-    // }
+    
 
     struct log result;
     // Consumer
-    // Get the result
-    pthread_mutex_lock(&mutex_log);
-        printf("log id: %d\n", *(int *)id);
+    while(1){
+        // open log file
+        logFile = fopen("log.txt", "a+");
+
+        pthread_mutex_lock(&mutex_log);
+
         while (log_queue.size == 0){
             pthread_cond_wait(&fill, &mutex_log);
         }
-        deQueue_log(&log_queue, result);
+        printf("log id: %d\n", *(int *)id);
+        deQueue_log(&log_queue, &result);
+        // printf("size: %d\n", log_queue.size);
         pthread_cond_signal(&empty);
-        printf("Word: %s, Result: %s\n", result.word, result.status);
-        // fprintf(logFile, "%s>%s\n", result.word, result.status);
-        // fclose(logFile);
-    pthread_mutex_unlock(&mutex_log);
+        printf("log>>Word: %s, Result: %s\n", result.word, result.status);
+        fprintf(logFile, "%s>%s\n", result.word, result.status);
+
+        pthread_mutex_unlock(&mutex_log);
+        fclose(logFile);
+    }
     return 0;
 }
 
@@ -148,7 +144,6 @@ int main(int argc, char const *argv[])
         logFile = stdout;
     }
     fflush(logFile);
-    printf("LogFile set\n");
     fprintf(logFile, "Log file opened.\n");
 
 
