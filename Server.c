@@ -22,6 +22,7 @@
 
 FILE *logFile;
 FILE *dict;
+char dictionary[50];
 
 queue_job job_queue;
 queue_log log_queue;
@@ -54,14 +55,23 @@ void* worker_thread(void* id){
         if(buffer[0] == 27){
             break;
         }
+
+        // Struct for log
         struct log result = {"\0", "\0"};
         strcpy(result.word, buffer);
 
+        // open dict
+        if((dict = fopen(dictionary, "r")) == NULL){
+            printf("failed to read file\n");
+            exit(EXIT_FAILURE);
+        }
+        printf("Start to find match\n");
         // Check the word
         fflush(dict);
         char word[100];
         while(fscanf(dict, "%s", word) != EOF){
             // Match the word
+            puts(">>>>>");
             printf("Word: %s, Buffer: %s\n", word, buffer);
             if(strcmp(word, buffer) == 0){
                 // Enqueue the result of a word
@@ -78,6 +88,7 @@ void* worker_thread(void* id){
                 strcpy(result.status, "MISSPELLED\n");
             }
         }
+        fclose(dict);
         printf("The word: %s > %s\n", result.word, result.status);
         // Send result to client
         send(client, result.status, sizeof(result.status), 0);
@@ -93,19 +104,24 @@ int main(int argc, char const *argv[])
     // Initial Queues
     init_queue_job(&job_queue);
     init_queue_log(&log_queue);
-    
+
     //* Open files
     logFile = fopen("log.txt", "w");
     if(logFile == NULL){
-        printf("lologFileg failed to open\n");
+        printf("logFile failed to open\n");
         // when failed to open, ouput to screen
         logFile = stdout;
     }
+    fflush(logFile);
+    printf("LogFile set\n");
     fprintf(logFile, "Log file opened.\n");
+
+
     // decide port and dictionary
     // Order: Command Port Dictionary
     unsigned int port = DEFAULT_PORT;
-    static char dictionary[50] = DEFAULT_DICTIONARY;
+    // char dictionary[50] = DEFAULT_DICTIONARY;
+    strcpy(dictionary, DEFAULT_DICTIONARY);
     // both provided
     if(argc == 3){
         strcpy(dictionary, argv[2]);
@@ -126,12 +142,12 @@ int main(int argc, char const *argv[])
     }
     // printf("Port: %d\nDict: %s\n", port, dictionary);
     //* Read dict
-    dict = fopen(dictionary, "r");
-    if(!dict){
-        printf("log failed to open\n");
-        // if not readable, open default one
-        dict = fopen(DEFAULT_DICTIONARY, "r");
-    }
+    // dict = fopen(dictionary, "r");
+    // if(!dict){
+    //     printf("log failed to open\n");
+    //     // if not readable, open default one
+    //     dict = fopen(DEFAULT_DICTIONARY, "r");
+    // }
     fprintf(logFile, "Dict file %s read.\n", dictionary);
 
     //* Create threads
