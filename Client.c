@@ -40,6 +40,8 @@ int main(int argc, char const *argv[])
     }
     char buffer[BUFFER_SIZE] = "\0";
     while(1){
+        fflush(stdin);
+        fflush(stdout);
         printf("Word> ");
         scanf("%s", buffer);
         send(clientSocket, buffer, sizeof(buffer), 0);
@@ -49,7 +51,7 @@ int main(int argc, char const *argv[])
             break;
         }
         recv(clientSocket, buffer, sizeof(buffer), 0);
-        printf("received: %s\n", buffer);
+        printf("received buffer:\n%s\n", buffer);
         
     }
     return 0;
