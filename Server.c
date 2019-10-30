@@ -117,7 +117,7 @@ void* log_thread(void* id){
         while (log_queue.size == 0){
             pthread_cond_wait(&fill, &mutex_log);
         }
-        printf("log id: %d\n", *(int *)id);
+        // printf("log id: %d\n", *(int *)id);
         deQueue_log(&log_queue, &result);
         // printf("size: %d\n", log_queue.size);
         pthread_cond_signal(&empty);
