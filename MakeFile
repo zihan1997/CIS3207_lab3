@@ -1,5 +1,0 @@
-checker: myshell.c utility.c myshell.h
-	gcc  -o checker –lpthread 
-
-clean:
-	rm checker
