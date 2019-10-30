@@ -24,14 +24,14 @@ void init_queue_job(queue_job* job_queue){
     job_queue->size = 0;
 }
 
-int enQueue_log(queue_log* log_queue, struct log* result){
+int enQueue_log(queue_log* log_queue, struct log result){
     // queue is full
     if(log_queue->size == (MAX-1)){
         return 0;
     }
     // int *arr = log_queue->queue;
     // arr[log_queue->size] = result;
-    log_queue->queue[log_queue->size] = *result;
+    log_queue->queue[log_queue->size] = result;
     log_queue->size += 1;
     return 1;
 }
@@ -59,16 +59,17 @@ void queueAdjust(int *arr, int *size)
     *size -= 1;
 }
 
-int deQueue_log(queue_log* log_queue, struct log* result){
+int deQueue_log(queue_log* log_queue, struct log *result){
     // check if the queue if empty
     if(log_queue->size == 0){
         return 0;
     }else{
         // int *arr = log_queue->queue;
-        result = &log_queue->queue[0];
+        *result = log_queue->queue[0];
         for(int i = 0; i < log_queue->size - 1; i++){
             log_queue[i] = log_queue[i+1];
         }
+        log_queue->size-=1;
         return 1;
     }
 }
