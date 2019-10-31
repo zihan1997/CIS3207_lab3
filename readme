@@ -1,7 +1,28 @@
 Name:
     spell checker
-Run:
-    1. make
-    2. ./server
-    3. ./client
-Description:
+Server:
+    Run(3 ways to run):
+        1. make
+        2.
+        * ./server port dictionary
+        * ./server dictionary
+        * ./server port
+    Description:
+        In this project, the server  performs spell 
+        checking on demand.  spell check server is to be a process 
+        that will acquire (read) sequences of words. If a word is in 
+        its dictionary, it's considered to be spelled properly. If not, 
+        it's considered to be misspelled. The dictionary itself is nothing 
+        but a very long list of words stored in plain text form.
+        
+        There are total 23 threads in the program
+        20 for worker threads that do spell checking.
+        1 for initialize everything and get connection to each client
+        1 for loging the word and result.
+
+client:
+    Run:
+        * ./client
+        & ./client port
+    Description:
+        
