@@ -51,7 +51,8 @@ int main(int argc, char const *argv[])
             break;
         }
         recv(clientSocket, buffer, sizeof(buffer), 0);
-        printf("received buffer:\n%s\n", buffer);
+        // printf("received buffer:\n%s\n", buffer);
+        printf("%s\n", buffer);
         
     }
     return 0;
