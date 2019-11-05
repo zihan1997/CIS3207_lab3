@@ -12,18 +12,27 @@
 
 #define BUFFER_SIZE 1024
 #define DEFAULT_PORT 10086
+#define MAX_WORKERS 10
 
+
+queue_job connects;
 pthread_mutex_t mutex;
 pthread_cond_t fill, empty;
 
 unsigned int port;
 
 void* clients(void* id){
-    printf("Thread%d ready\n", *(int *)id);
-
     while(1){
-
+        int clientSocket;
+        // Consumers
         pthread_mutex_lock(&mutex);
+            while(connects.size == 0){
+                pthread_cond_wait(&fill, &mutex);
+            }
+        printf("Thread%d ready\n", *(int *)id);
+        deQueue_job(&connects, &clientSocket);
+        pthread_cond_signal(&empty);
+        pthread_mutex_unlock(&mutex);
         // connect
         struct sockaddr_in serveradr;
         serveradr.sin_family = AF_INET;
@@ -63,13 +72,20 @@ void* clients(void* id){
 int main(int argc, char const *argv[])
 {
     // Initial Queues
-    queue_job connects;
     init_queue_job(&connects);
 
     // Initial cond_t mutex
     pthread_cond_init(&empty, 0);
     pthread_cond_init(&fill, 0);
     pthread_mutex_init(&mutex, 0);
+
+    // Threads
+    pthread_t threads[MAX_WORKERS];
+    int ids[MAX_WORKERS];
+    for(int i = 0; i < MAX_WORKERS; i++){
+        ids[i] = i;
+        pthread_create(&threads[i], NULL, &clients, &ids[i]);
+    }
 
     // Port get
     port = DEFAULT_PORT;
@@ -82,7 +98,26 @@ int main(int argc, char const *argv[])
         perror("failed to create socket\n");
         return -1;
     }
-    
+
+    int clientID;
+    while(1){
+        printf("ID: ");
+        scanf("%d", &clientID);
+        printf("Entered %d\n", clientID);
+        if(clientID > 2){
+            continue;
+        }
+        if(clientID == -1){
+            break;
+        }
+        pthread_mutex_lock(&mutex);
+            while(connects.size == MAX){
+                pthread_cond_wait(&empty, &mutex);
+            }
+        enQueue_job(&connects, clientSocket);
+        pthread_cond_signal(&fill);
+        pthread_mutex_unlock(&mutex);
+    }
     
     
     return 0;
