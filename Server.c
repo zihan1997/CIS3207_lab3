@@ -171,8 +171,6 @@ int main(int argc, char const *argv[])
         ;// go default
     }
     // printf("Port: %d\nDict: %s\n", port, dictionary);
-    fprintf(logFile, "Dict file %s read.\n", dictionary);
-    fclose(logFile);
 
     //* Create threads
 
@@ -196,7 +194,8 @@ int main(int argc, char const *argv[])
     //     pthread_join(threads[i], NULL);
     // }
     // puts("All Done");
-
+    fprintf(logFile, "Threads created\n");
+    fflush(logFile);
 
 
     // Socket implement
@@ -215,6 +214,8 @@ int main(int argc, char const *argv[])
         printf("Error occured connecting to %d\n", port);
         return -1;
     }
+    fprintf(logFile, "connecting to port %d\n", port);
+    fclose(logFile);
     while (1)
     {
         // if connection failed, go to next loop to wait
