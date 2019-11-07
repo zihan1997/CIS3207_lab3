@@ -40,15 +40,17 @@ int main(int argc, char const *argv[])
     }
     char buffer[BUFFER_SIZE] = "\0";
     while(1){
-        fflush(stdin);
-        fflush(stdout);
+        // fflush(stdin);
+        // fflush(stdout);
         printf("Word> ");
         scanf("%s", buffer);
-        send(clientSocket, buffer, sizeof(buffer), 0);
         // escape char
         if(buffer[0] == 27){
             close(clientSocket);
             break;
+        }
+        if(send(clientSocket, buffer, sizeof(buffer), 0) < 0){
+            printf("send failed\n");
         }
         recv(clientSocket, buffer, sizeof(buffer), 0);
         // printf("received buffer:\n%s\n", buffer);
