@@ -67,7 +67,7 @@ int deQueue_log(queue_log* log_queue, struct log *result){
         // int *arr = log_queue->queue;
         *result = log_queue->queue[0];
         for(int i = 0; i < log_queue->size - 1; i++){
-            log_queue[i] = log_queue[i+1];
+            log_queue->queue[i] = log_queue->queue[i+1];
         }
         log_queue->size-=1;
         return 1;
