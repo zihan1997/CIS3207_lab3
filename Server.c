@@ -45,6 +45,7 @@ void* worker_thread(void* id){
     }
     deQueue_job(&job_queue, &client);
     pthread_cond_signal(&empty);
+    pthread_cond_broadcast(&empty);
     pthread_mutex_unlock(&mutex);
 
     printf("Thread>%d\n", *(int *)id);
@@ -96,6 +97,7 @@ void* worker_thread(void* id){
         }
         enQueue_log(&log_queue, result);
         pthread_cond_signal(&fill);
+        pthread_cond_broadcast(&fill);
         pthread_mutex_unlock(&mutex_log);
     
     }
@@ -105,7 +107,6 @@ void* worker_thread(void* id){
 
 void* log_thread(void* id){
     
-
     struct log result;
     // Consumer
     while(1){
@@ -113,18 +114,20 @@ void* log_thread(void* id){
         logFile = fopen("log.txt", "a+");
 
         pthread_mutex_lock(&mutex_log);
-
         while (log_queue.size == 0){
             pthread_cond_wait(&fill, &mutex_log);
         }
-        // printf("log id: %d\n", *(int *)id);
         deQueue_log(&log_queue, &result);
-        // printf("size: %d\n", log_queue.size);
         pthread_cond_signal(&empty);
+        pthread_cond_broadcast(&empty);
+        pthread_mutex_unlock(&mutex_log);
+
+
         printf("log>>Word: %s, Result: %s\n", result.word, result.status);
+        fflush(logFile);
         fprintf(logFile, "%s>%s\n", result.word, result.status);
 
-        pthread_mutex_unlock(&mutex_log);
+
         fclose(logFile);
     }
     return 0;
@@ -177,6 +180,7 @@ int main(int argc, char const *argv[])
     // initialize mutext and cond
     pthread_cond_init(&empty, 0);
     pthread_cond_init(&fill, 0);
+    // pthread_mutex_init(&mutex_log, 0);
     pthread_mutex_init(&mutex, 0);
 
     // ids array is to assign id to each thread
@@ -229,11 +233,12 @@ int main(int argc, char const *argv[])
         // char result[20] = "OK";
         // send(clientSocket, result, sizeof(result), 0);
         pthread_mutex_lock(&mutex);
-        enQueue_job(&job_queue, clientSocket);
         while(job_queue.size == MAX){
             pthread_cond_wait(&empty, &mutex);
         }
+        enQueue_job(&job_queue, clientSocket);
         pthread_cond_signal(&fill);
+        pthread_cond_broadcast(&fill);
         pthread_mutex_unlock(&mutex);
     }
     return 0;
