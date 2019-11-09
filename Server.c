@@ -36,72 +36,72 @@ pthread_mutex_t mutex, mutex_log;
 void* worker_thread(void* id){
     // printf("Thread>%d\n", *(int *)id);
     // fprintf(logFile,"Thread>%d\n", *(int *)id);
-    
     int client = 0;
-    //Get the socket discriptor
-    pthread_mutex_lock(&mutex);
-    while(job_queue.size == 0){
-        pthread_cond_wait(&fill, &mutex);
-    }
-    deQueue_job(&job_queue, &client);
-    pthread_cond_signal(&empty);
-    pthread_cond_broadcast(&empty);
-    pthread_mutex_unlock(&mutex);
-
-    printf("Thread>%d\n", *(int *)id);
-
-    char buffer[BUFFER_SIZE] = "\0";
-    // Start to receive data
-    while( recv(client, buffer, sizeof(buffer), 0) > 0){
-        if(buffer[0] == 27){
-            break;
+    while(1){
+        //Get the socket discriptor
+        pthread_mutex_lock(&mutex);
+        while(job_queue.size == 0){
+            pthread_cond_wait(&fill, &mutex);
         }
+        deQueue_job(&job_queue, &client);
+        pthread_cond_signal(&empty);
+        pthread_cond_broadcast(&empty);
+        pthread_mutex_unlock(&mutex);
 
-        // Struct for log
-        struct log result = {"\0", "\0"};
-        strcpy(result.word, buffer);
+        printf("Thread>%d\n", *(int *)id);
 
-        // open dict
-        if((dict = fopen(dictionary, "r")) == NULL){
-            printf("failed to read file\n");
-            exit(EXIT_FAILURE);
-        }
-            // printf("Start to find match\n");
-        // Check the word
-        fflush(dict);
-        char word[100];
-        while(fscanf(dict, "%s", word) != EOF){
-            // Match the word
-                // puts(">>>>>");
-                // printf("Word: %s, Buffer: %s\n", word, buffer);
-            if(strcmp(word, buffer) == 0){
-                strcpy(result.status, "OK");
+        char buffer[BUFFER_SIZE] = "\0";
+        // Start to receive data
+        while( recv(client, buffer, sizeof(buffer), 0) > 0){
+            if(buffer[0] == 27){
                 break;
-            }else{
-                strcpy(result.status, "MISSPELLED");
             }
-        }
-        fclose(dict);
-        printf("worker%d:The word: %s > %s\n", *(int *)id, result.word, result.status);
-        // Send result to client
-        char data[20];
-        strcpy(data, result.word);
-        strcat(data, " ");
-        strcat(data, result.status);
-        send(client, data, sizeof(data), 0);
 
-        // Producer of log
-        pthread_mutex_lock(&mutex_log);
-        while (log_queue.size == MAX){
-            pthread_cond_wait(&empty, &mutex_log);
+            // Struct for log
+            struct log result = {"\0", "\0"};
+            strcpy(result.word, buffer);
+
+            // open dict
+            if((dict = fopen(dictionary, "r")) == NULL){
+                printf("failed to read file\n");
+                exit(EXIT_FAILURE);
+            }
+                // printf("Start to find match\n");
+            // Check the word
+            fflush(dict);
+            char word[100];
+            while(fscanf(dict, "%s", word) != EOF){
+                // Match the word
+                    // puts(">>>>>");
+                    // printf("Word: %s, Buffer: %s\n", word, buffer);
+                if(strcmp(word, buffer) == 0){
+                    strcpy(result.status, "OK");
+                    break;
+                }else{
+                    strcpy(result.status, "MISSPELLED");
+                }
+            }
+            fclose(dict);
+            printf("worker%d:The word: %s > %s\n", *(int *)id, result.word, result.status);
+            // Send result to client
+            char data[20];
+            strcpy(data, result.word);
+            strcat(data, " ");
+            strcat(data, result.status);
+            send(client, data, sizeof(data), 0);
+
+            // Producer of log
+            pthread_mutex_lock(&mutex_log);
+            while (log_queue.size == MAX){
+                pthread_cond_wait(&empty, &mutex_log);
+            }
+            enQueue_log(&log_queue, result);
+            pthread_cond_signal(&fill);
+            pthread_cond_broadcast(&fill);
+            pthread_mutex_unlock(&mutex_log);
+
         }
-        enQueue_log(&log_queue, result);
-        pthread_cond_signal(&fill);
-        pthread_cond_broadcast(&fill);
-        pthread_mutex_unlock(&mutex_log);
-    
     }
-
     return 0;
 }
 
@@ -117,6 +117,7 @@ void* log_thread(void* id){
         while (log_queue.size == 0){
             pthread_cond_wait(&fill, &mutex_log);
         }
+        printf("log thread>%d\n", *(int *)id);
         deQueue_log(&log_queue, &result);
         pthread_cond_signal(&empty);
         pthread_cond_broadcast(&empty);
