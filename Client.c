@@ -46,6 +46,10 @@ int main(int argc, char const *argv[])
         scanf("%s", buffer);
         // escape char
         if(buffer[0] == 27){
+            char closeWords[2];
+            closeWords[0] = 27;
+            closeWords[1] = '\0';
+            send(clientSocket, closeWords, sizeof(closeWords), 0);
             close(clientSocket);
             break;
         }
