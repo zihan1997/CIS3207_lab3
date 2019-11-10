@@ -1,12 +1,12 @@
 Name:
     spell checker
 Server:
-    Run(3 ways to run):
+    Run:
         1. make
-        2.
-        * ./server port dictionary
-        * ./server dictionary
-        * ./server port
+        2. 3 ways
+            * ./server port dictionary
+            * ./server dictionary
+            * ./server port
     Description:
         In this project, the server  performs spell 
         checking on demand.  spell check server is to be a process 
@@ -20,9 +20,24 @@ Server:
         1 for initialize everything and get connection to each client
         1 for loging the word and result.
 
-client:
+Client:
     Run:
+        1. make
+        2.
         * ./client
-        & ./client port
+        * ./client port
     Description:
+        create connection to server on specific port. If no port provided,
+        it goes with default port which is 10086
+
+Multi_Client:
+    Run:
+        1. make
+        2.
+        * ./multi_Client port
+    Description:
+        Main thread gets words that need to be checked on server. Total 20
+        worker threads are currently sleeping until words queue is not empty.
+        When one threads wakes up, it starts to create connection to server.
+        When done sending and receiving data, it closes connection.
         
