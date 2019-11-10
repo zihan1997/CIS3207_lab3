@@ -48,12 +48,13 @@ void* worker_thread(void* id){
         pthread_cond_signal(&empty);
         pthread_mutex_unlock(&mutex);
 
-        printf("Thread>%d\n", *(int *)id);
+        // printf("Thread>%d\n", *(int *)id);
 
         char buffer[BUFFER_SIZE] = "\0";
         // Start to receive data
         while( recv(client, buffer, sizeof(buffer), 0) > 0){
             if(buffer[0] == 27){
+                printf("Client exits\n");
                 break;
             }
 
@@ -82,7 +83,7 @@ void* worker_thread(void* id){
                 }
             }
             fclose(dict);
-            printf("worker%d:The word: %s > %s\n", *(int *)id, result.word, result.status);
+            printf("worker%d:\n\tWord: %s > %s\n", *(int *)id, result.word, result.status);
             // Send result to client
             char data[20];
             strcpy(data, result.word);
@@ -122,7 +123,7 @@ void* log_thread(void* id){
         // open log file
         pthread_mutex_lock(&mutex_log);
         logFile = fopen("log.txt", "a+");
-        printf("log. Word: %s, Result: %s\n", result.word, result.status);
+        printf("log:\n\tWord: %s, Result: %s\n", result.word, result.status);
         // fflush(logFile);
         fprintf(logFile, "%s>%s\n", result.word, result.status);
         fclose(logFile);
