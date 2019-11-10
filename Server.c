@@ -17,7 +17,7 @@
 // port between 1024 to 65535
 #define DEFAULT_PORT 10086
 #define DEFAULT_DICTIONARY "words.txt"
-#define MAX_WORKER 20
+#define MAX_WORKER 1
 #define BUFFER_SIZE 1024
 
 FILE *logFile;
@@ -30,6 +30,7 @@ queue_log log_queue;
 // empty: jsut dequeued, ready to enqueue more
 // fill: new connect comes in
 pthread_cond_t empty, fill;
+pthread_cond_t empty_log, fill_log;
 pthread_mutex_t mutex, mutex_log;
 
 // get job queue, check words and send to log queue
@@ -45,7 +46,6 @@ void* worker_thread(void* id){
         }
         deQueue_job(&job_queue, &client);
         pthread_cond_signal(&empty);
-        pthread_cond_broadcast(&empty);
         pthread_mutex_unlock(&mutex);
 
         printf("Thread>%d\n", *(int *)id);
@@ -93,11 +93,10 @@ void* worker_thread(void* id){
             // Producer of log
             pthread_mutex_lock(&mutex_log);
             while (log_queue.size == MAX){
-                pthread_cond_wait(&empty, &mutex_log);
+                pthread_cond_wait(&empty_log, &mutex_log);
             }
             enQueue_log(&log_queue, result);
-            pthread_cond_signal(&fill);
-            pthread_cond_broadcast(&fill);
+            pthread_cond_signal(&fill_log);
             pthread_mutex_unlock(&mutex_log);
 
         }
@@ -110,26 +109,25 @@ void* log_thread(void* id){
     struct log result;
     // Consumer
     while(1){
-        // open log file
-        logFile = fopen("log.txt", "a+");
 
         pthread_mutex_lock(&mutex_log);
         while (log_queue.size == 0){
-            pthread_cond_wait(&fill, &mutex_log);
+            pthread_cond_wait(&fill_log, &mutex_log);
         }
-        printf("log thread>%d\n", *(int *)id);
         deQueue_log(&log_queue, &result);
-        pthread_cond_signal(&empty);
-        pthread_cond_broadcast(&empty);
+        pthread_cond_signal(&empty_log);
         pthread_mutex_unlock(&mutex_log);
 
 
-        printf("log>>Word: %s, Result: %s\n", result.word, result.status);
-        fflush(logFile);
+        // open log file
+        pthread_mutex_lock(&mutex_log);
+        logFile = fopen("log.txt", "a+");
+        printf("log. Word: %s, Result: %s\n", result.word, result.status);
+        // fflush(logFile);
         fprintf(logFile, "%s>%s\n", result.word, result.status);
-
-
         fclose(logFile);
+        pthread_mutex_unlock(&mutex_log);
+
     }
     return 0;
 }
@@ -181,8 +179,10 @@ int main(int argc, char const *argv[])
     // initialize mutext and cond
     pthread_cond_init(&empty, 0);
     pthread_cond_init(&fill, 0);
-    // pthread_mutex_init(&mutex_log, 0);
+    pthread_cond_init(&empty_log, 0);
+    pthread_cond_init(&fill_log, 0);
     pthread_mutex_init(&mutex, 0);
+    pthread_mutex_init(&mutex_log, 0);
 
     // ids array is to assign id to each thread
     int ids[MAX_WORKER];
@@ -239,7 +239,6 @@ int main(int argc, char const *argv[])
         }
         enQueue_job(&job_queue, clientSocket);
         pthread_cond_signal(&fill);
-        pthread_cond_broadcast(&fill);
         pthread_mutex_unlock(&mutex);
     }
     return 0;
