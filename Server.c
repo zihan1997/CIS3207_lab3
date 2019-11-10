@@ -17,7 +17,7 @@
 // port between 1024 to 65535
 #define DEFAULT_PORT 10086
 #define DEFAULT_DICTIONARY "words.txt"
-#define MAX_WORKER 1
+#define MAX_WORKER 20
 #define BUFFER_SIZE 1024
 
 FILE *logFile;
