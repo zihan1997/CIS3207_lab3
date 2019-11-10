@@ -95,35 +95,23 @@ void printQueue(int *arr, int size){
 /*
 int main(int argc, char const *argv[])
 {
-    queue_job job_queue;
-    init_queue_job(&job_queue);
-    int num = 0;
-    while(num != -1){
-        printf("Interger read> ");
-        scanf("%d", &num);
-        if(num == -1){
-            break;
-        }
-        int *arr = job_queue.queue;
-        // printf("%d\n", num);
-        if(num == 1){
-            printf("enqueue> ");
-            scanf("%d", &num);
-            if(num == -1){
-                break;
-            }
-            enQueue_job(&job_queue, num);
-            printQueue(arr, job_queue.size);
-        }
-        if(num == 2){
-            printf("dequeue> ");
-            deQueue_job(&job_queue, &num);
-            puts("");
-            printf("dequeued: %d\n", num);
-            int *arr = job_queue.queue;
-            printQueue(arr, job_queue.size);
-        }
+    struct log result0 = {"0", "ok"};
+    struct log result1 = {"1", "ok"};
+    struct log result2 = {"2", "ok"};
+    struct log result3 = {"3", "ok"};
+    queue_log logs;
+    struct log result;
+    init_queue_log(&logs);
+    enQueue_log(&logs, result0);
+    enQueue_log(&logs, result1);
+    enQueue_log(&logs, result2);
+    enQueue_log(&logs, result3);
+    deQueue_log(&logs, &result);
+    deQueue_log(&logs, &result);
+    for(int i = 0; i < logs.size; i++){
+        printf("%d. %s>%s\n", i, logs.queue[i].word, logs.queue[i].status);
     }
+    printf(" %s>%s\n", result.word, result.status);
     return 0;
 }
 */
