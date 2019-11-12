@@ -16,9 +16,10 @@ Server:
         but a very long list of words stored in plain text form.
         
         There are total 23 threads in the program
-        20 for worker threads that do spell checking.
+        20 for worker threads that dequeue connection,
+            acquire connection and do spell checking.
         1 for initialize everything and get connection to each client
-        1 for loging the word and result.
+        1 for loging the word and result into file.
 
 Client:
     Run:
@@ -28,7 +29,8 @@ Client:
         * ./client port
     Description:
         create connection to server on specific port. If no port provided,
-        it goes with default port which is 10086
+        it goes with default port which is 10086. Words will be read and sent
+        to server part, then retrive the result.
 
 Multi_Client:
     Run:
